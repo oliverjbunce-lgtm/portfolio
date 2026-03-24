@@ -1,414 +1,492 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
+// ─── Custom Cursor ───────────────────────────────────────────────────────────
+function CustomCursor() {
+  const cursorRef = useRef(null);
+  const followerRef = useRef(null);
+  const [hovered, setHovered] = useState(false);
 
-const stagger = {
-  visible: { transition: { staggerChildren: 0.12 } },
-};
+  useEffect(() => {
+    const move = (e) => {
+      const { clientX: x, clientY: y } = e;
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate(${x - 4}px, ${y - 4}px)`;
+      }
+      if (followerRef.current) {
+        followerRef.current.style.transform = `translate(${x - 20}px, ${y - 20}px)`;
+      }
+    };
+    const over = (e) => e.target.closest("a,button,[data-hover]") && setHovered(true);
+    const out = () => setHovered(false);
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseover", over);
+    window.addEventListener("mouseout", out);
+    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseover", over); window.removeEventListener("mouseout", out); };
+  }, []);
 
-function AnimatedSection({ children, className }) {
-  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
   return (
-    <motion.div ref={ref} variants={stagger} initial="hidden" animate={inView ? "visible" : "hidden"} className={className}>
+    <>
+      <div ref={cursorRef} className="fixed top-0 left-0 w-2 h-2 bg-sky-400 rounded-full z-[9999] pointer-events-none transition-transform duration-[10ms]" />
+      <div ref={followerRef} className={`fixed top-0 left-0 rounded-full z-[9998] pointer-events-none border border-sky-400/60 transition-all duration-200 ${hovered ? "w-14 h-14 bg-sky-400/10" : "w-10 h-10 bg-transparent"}`} style={{ transition: "width 0.2s, height 0.2s, background 0.2s, transform 0.12s" }} />
+    </>
+  );
+}
+
+// ─── Text Scramble ────────────────────────────────────────────────────────────
+function ScrambleText({ text, className }) {
+  const [display, setDisplay] = useState(text);
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const scramble = useCallback(() => {
+    let iter = 0;
+    const interval = setInterval(() => {
+      setDisplay(text.split("").map((c, i) => {
+        if (c === " ") return " ";
+        if (i < iter) return text[i];
+        return chars[Math.floor(Math.random() * chars.length)];
+      }).join(""));
+      if (iter >= text.length) clearInterval(interval);
+      iter += 1.5;
+    }, 40);
+  }, [text]);
+  return <span className={className} onMouseEnter={scramble}>{display}</span>;
+}
+
+// ─── Typewriter ────────────────────────────────────────────────────────────────
+const roles = ["Web Designer", "AI Builder", "Digital Marketer", "Front-End Developer", "Growth Partner"];
+function Typewriter() {
+  const [idx, setIdx] = useState(0);
+  const [sub, setSub] = useState(0);
+  const [del, setDel] = useState(false);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const word = roles[idx];
+      if (!del) {
+        if (sub < word.length) setSub(s => s + 1);
+        else setTimeout(() => setDel(true), 1200);
+      } else {
+        if (sub > 0) setSub(s => s - 1);
+        else { setDel(false); setIdx(i => (i + 1) % roles.length); }
+      }
+    }, del ? 50 : 80);
+    return () => clearTimeout(timeout);
+  }, [sub, del, idx]);
+  return (
+    <span className="text-sky-400">
+      {roles[idx].slice(0, sub)}
+      <span className="animate-pulse">|</span>
+    </span>
+  );
+}
+
+// ─── Magnetic Button ──────────────────────────────────────────────────────────
+function MagneticButton({ children, className, href }) {
+  const ref = useRef(null);
+  const x = useSpring(0, { stiffness: 150, damping: 15 });
+  const y = useSpring(0, { stiffness: 150, damping: 15 });
+  const handle = (e) => {
+    const rect = ref.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    x.set((e.clientX - cx) * 0.35);
+    y.set((e.clientY - cy) * 0.35);
+  };
+  const reset = () => { x.set(0); y.set(0); };
+  return (
+    <motion.a ref={ref} href={href} style={{ x, y }} onMouseMove={handle} onMouseLeave={reset}
+      whileTap={{ scale: 0.95 }} className={className}>
+      {children}
+    </motion.a>
+  );
+}
+
+// ─── Tilt Card ────────────────────────────────────────────────────────────────
+function TiltCard({ children, className }) {
+  const ref = useRef(null);
+  const rotateX = useSpring(0, { stiffness: 200, damping: 20 });
+  const rotateY = useSpring(0, { stiffness: 200, damping: 20 });
+  const handle = (e) => {
+    const rect = ref.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    rotateX.set(-y * 12);
+    rotateY.set(x * 12);
+  };
+  const reset = () => { rotateX.set(0); rotateY.set(0); };
+  return (
+    <motion.div ref={ref} style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+      onMouseMove={handle} onMouseLeave={reset} className={className}>
       {children}
     </motion.div>
   );
 }
 
-function AnimatedItem({ children, className }) {
+// ─── Infinite Marquee ─────────────────────────────────────────────────────────
+const clients = [
+  "Basketball New Zealand", "Independent Doors", "Round the Bays", "Manor Build",
+  "BPM", "Global Dairy Trade", "Shelving Depot", "Smith BioMed",
+  "ASEAN NZ Business Council", "Permagroup", "ICNZ", "Coping with Loss",
+  "FrostBoss", "Anglers Lodge", "Europlan", "StuffEvents",
+  "Advantage Business", "Summer of Tech", "Island Cow Cuddles", "Betacraft", "Nectar"
+];
+
+function Marquee() {
+  const doubled = [...clients, ...clients];
   return (
-    <motion.div variants={fadeUp} className={className}>
-      {children}
-    </motion.div>
+    <div className="relative overflow-hidden py-4 bg-gray-950 border-y border-white/5">
+      <div className="flex animate-marquee whitespace-nowrap">
+        {doubled.map((c, i) => (
+          <span key={i} className="inline-flex items-center gap-3 mx-6 text-gray-500 text-sm font-medium">
+            <span className="w-1 h-1 bg-sky-500 rounded-full" />{c}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
-function CountUp({ target, suffix = "" }) {
+// ─── AI Demo Widget ───────────────────────────────────────────────────────────
+const chatScript = [
+  { role: "user", text: "Can you analyse my website and tell me what's holding back my conversions?" },
+  { role: "ai", text: "Analysing oliverbunce.com... Found 3 critical issues: slow LCP (4.2s), no clear CTA above the fold, and missing structured data for local SEO." },
+  { role: "user", text: "How quickly can you fix that?" },
+  { role: "ai", text: "Image optimisation and CTA restructure — 2 days. Full SEO schema + Core Web Vitals fix — 1 week. Want me to start?" },
+];
+
+function AIDemo() {
+  const [visible, setVisible] = useState(0);
+  const [ref, inView] = useInView({ triggerOnce: true });
+  useEffect(() => {
+    if (!inView) return;
+    const timers = chatScript.map((_, i) => setTimeout(() => setVisible(i + 1), i * 1800));
+    return () => timers.forEach(clearTimeout);
+  }, [inView]);
+  return (
+    <div ref={ref} className="bg-gray-900 rounded-3xl p-6 border border-white/10 max-w-md w-full">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="w-3 h-3 rounded-full bg-red-500" />
+        <div className="w-3 h-3 rounded-full bg-yellow-500" />
+        <div className="w-3 h-3 rounded-full bg-green-500" />
+        <span className="text-xs text-gray-500 ml-2 font-mono">oliver-ai-assistant</span>
+      </div>
+      <div className="space-y-3 min-h-[220px]">
+        {chatScript.slice(0, visible).map((msg, i) => (
+          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.role === "user" ? "bg-sky-500 text-white rounded-br-sm" : "bg-white/10 text-gray-200 rounded-bl-sm"}`}>
+              {msg.role === "ai" && <span className="text-sky-400 text-xs font-semibold block mb-1">✦ Vela AI</span>}
+              {msg.text}
+            </div>
+          </motion.div>
+        ))}
+        {visible < chatScript.length && visible > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+            <div className="bg-white/10 px-4 py-3 rounded-2xl rounded-bl-sm">
+              <div className="flex gap-1">
+                {[0, 1, 2].map(i => <motion.div key={i} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, delay: i * 0.15, duration: 0.6 }} className="w-1.5 h-1.5 bg-sky-400 rounded-full" />)}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Animated Counter ─────────────────────────────────────────────────────────
+function Counter({ value, suffix = "", prefix = "" }) {
   const [count, setCount] = useState(0);
   const [ref, inView] = useInView({ triggerOnce: true });
   useEffect(() => {
     if (!inView) return;
-    let start = 0;
-    const duration = 1500;
-    const step = (timestamp) => {
-      if (!start) start = timestamp;
-      const progress = Math.min((timestamp - start) / duration, 1);
-      setCount(Math.floor(progress * target));
-      if (progress < 1) requestAnimationFrame(step);
+    let start = null;
+    const step = (ts) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / 1200, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setCount(Math.floor(ease * value));
+      if (p < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
-  }, [inView, target]);
-  return <span ref={ref}>{count}{suffix}</span>;
+  }, [inView, value]);
+  return <span ref={ref}>{prefix}{count}{suffix}</span>;
 }
 
-const services = [
-  {
-    title: "AI Workflow Automation",
-    description: "Custom AI systems that automate the complex — from document processing and quoting engines to intelligent lead generation and business workflows.",
-    icon: "✦",
-    image: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600&q=80",
-    color: "from-sky-500/20 to-blue-600/10",
-  },
-  {
-    title: "Web Design & Development",
-    description: "Clean, fast, conversion-focused websites built with Next.js, React, and Tailwind. Designed to look exceptional and perform even better.",
-    icon: "◻",
-    image: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80",
-    color: "from-violet-500/20 to-purple-600/10",
-  },
-  {
-    title: "Digital Marketing",
-    description: "SEO strategy, content marketing, and growth systems that compound over time. Built for businesses that want sustainable, measurable results.",
-    icon: "↗",
-    image: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=600&q=80",
-    color: "from-emerald-500/20 to-teal-600/10",
-  },
-];
+// ─── Fade Up ─────────────────────────────────────────────────────────────────
+function FadeUp({ children, delay = 0, className }) {
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
+  return (
+    <motion.div ref={ref} initial={{ opacity: 0, y: 32 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }} className={className}>
+      {children}
+    </motion.div>
+  );
+}
 
-const clients = [
-  { name: "Basketball New Zealand", domain: "basketballnz.co.nz" },
-  { name: "Independent Doors", domain: "independentdoors.co.nz" },
-  { name: "Round the Bays", domain: "roundthebays.co.nz" },
-  { name: "Manor Build", domain: "manorbuild.co.nz" },
-  { name: "BPM", domain: "bpm.co.nz" },
-  { name: "Global Dairy Trade", domain: "globaldairytrade.info" },
-  { name: "Shelving Depot", domain: "shelvingdepot.co.nz" },
-  { name: "Smith BioMed", domain: "smithbiomed.com" },
-  { name: "ASEAN NZ Business Council", domain: "aseannz.org" },
-  { name: "Permagroup", domain: "permagroup.co.nz" },
-  { name: "ICNZ", domain: "icnz.org.nz" },
-  { name: "Coping with Loss", domain: "copingwithloss.co.nz" },
-  { name: "FrostBoss", domain: "frostboss.com" },
-  { name: "Anglers Lodge", domain: "anglerslodge.co.nz" },
-  { name: "Europlan", domain: "europlan.co.nz" },
-  { name: "StuffEvents", domain: "stuffevents.co.nz" },
-  { name: "Advantage Business", domain: "advantagebusiness.co.nz" },
-  { name: "Summer of Tech", domain: "summeroftech.co.nz" },
-  { name: "Island Cow Cuddles", domain: "islandcowcuddles.com" },
-  { name: "Betacraft", domain: "betacraft.co.nz" },
-  { name: "Nectar", domain: "nectar.nz" },
-];
-
+// ─── Main Page ────────────────────────────────────────────────────────────────
 const projects = [
-  {
-    title: "Door AI — Independent Doors",
-    description: "AI system that reads building floor plans, auto-detects and classifies 12 door types, and generates accurate quotes. YOLOv8 model trained on 1,400+ floor plan images.",
-    tags: ["AI", "Computer Vision", "Web Portal"],
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
-    accent: "sky",
-  },
-  {
-    title: "Basketball New Zealand",
-    description: "Digital presence for Basketball New Zealand, home of the Tall Blacks and national basketball programmes.",
-    tags: ["Web Design", "Sports"],
-    image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
-    accent: "orange",
-  },
-  {
-    title: "Global Dairy Trade",
-    description: "Web design and digital work for the world's leading online dairy commodity trading platform.",
-    tags: ["Web Design", "Enterprise"],
-    image: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800&q=80",
-    accent: "green",
-  },
-  {
-    title: "Round the Bays",
-    description: "Web and digital work for one of New Zealand's most iconic fun run events.",
-    tags: ["Web Design", "Events"],
-    image: "https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?w=800&q=80",
-    accent: "red",
-  },
-  {
-    title: "Summer of Tech",
-    description: "Digital presence for NZ's premier tech internship programme connecting students with top employers.",
-    tags: ["Web Design", "Tech", "Education"],
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
-    accent: "violet",
-  },
+  { title: "Door AI", sub: "Independent Doors", desc: "YOLOv8 model trained on 1,400+ floor plans. Reads architectural drawings, classifies 12 door types, generates quotes instantly. Replaced a 2-day manual process with a 30-second AI pipeline.", tags: ["AI", "Computer Vision", "YOLOv8"], img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80", span: "full" },
+  { title: "Basketball NZ", sub: "Tall Blacks & National Programmes", desc: "Digital presence for NZ's national basketball body.", tags: ["Web Design", "Sports"], img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80" },
+  { title: "Global Dairy Trade", sub: "Enterprise Platform", desc: "World's leading dairy commodity trading platform.", tags: ["Enterprise", "Web"], img: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800&q=80" },
+  { title: "Round the Bays", sub: "NZ's Iconic Fun Run", desc: "Event digital presence, registration flow, and marketing.", tags: ["Events", "Marketing"], img: "https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?w=800&q=80" },
+  { title: "Summer of Tech", sub: "NZ Tech Internship Programme", desc: "Platform connecting students to NZ's top tech employers.", tags: ["Education", "Web"], img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80" },
 ];
 
-const accentMap = {
-  sky: "bg-sky-100 text-sky-700",
-  orange: "bg-orange-100 text-orange-700",
-  green: "bg-green-100 text-green-700",
-  red: "bg-red-100 text-red-700",
-  violet: "bg-violet-100 text-violet-700",
-};
+const services = [
+  { title: "AI Automation", desc: "Custom AI systems — from document intelligence to automated lead generation. Real leverage, measurable ROI.", icon: "✦", bg: "bg-sky-500" },
+  { title: "Web Design & Dev", desc: "Next.js, React, Tailwind. Fast, beautiful, conversion-focused.", icon: "◻", bg: "bg-gray-900" },
+  { title: "Digital Marketing", desc: "SEO, content, growth systems. Built to compound.", icon: "↗", bg: "bg-violet-600" },
+  { title: "Brand & Strategy", desc: "Positioning, messaging, visual identity. Built to last.", icon: "◈", bg: "bg-emerald-600" },
+];
 
 export default function Home() {
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 600], [0, 120]);
 
   return (
-    <main className="min-h-screen bg-white overflow-x-hidden">
+    <main className="bg-[#0a0a0a] text-white min-h-screen overflow-x-hidden" style={{ cursor: "none" }}>
+      <CustomCursor />
 
-      {/* Nav */}
-      <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100"
-      >
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="font-semibold text-sm tracking-tight">Oliver Bunce</span>
-          <div className="hidden md:flex items-center gap-8 text-sm text-gray-500">
-            <a href="#services" className="hover:text-gray-900 transition-colors">Services</a>
-            <a href="#work" className="hover:text-gray-900 transition-colors">Work</a>
-            <a href="#clients" className="hover:text-gray-900 transition-colors">Clients</a>
-            <motion.a
-              href="#contact"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              className="bg-sky-500 text-white px-4 py-1.5 rounded-full hover:bg-sky-600 transition-colors"
-            >
-              Get in touch
-            </motion.a>
+      {/* ── Nav */}
+      <motion.nav initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }}
+        className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <ScrambleText text="OLIVER BUNCE" className="text-sm font-bold tracking-widest text-white" />
+          <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
+            {["Services", "Work", "Clients"].map(l => (
+              <a key={l} href={`#${l.toLowerCase()}`} className="hover:text-white transition-colors">{l}</a>
+            ))}
+            <MagneticButton href="#contact" className="bg-sky-500 text-white px-5 py-2 rounded-full font-medium hover:bg-sky-400 transition-colors text-sm">
+              Let's talk
+            </MagneticButton>
           </div>
         </div>
       </motion.nav>
 
-      {/* Hero */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
-        <motion.div style={{ y: heroY }} className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-blue-50" />
-          <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-sky-200/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-10 w-[400px] h-[400px] bg-blue-200/20 rounded-full blur-3xl" />
-          {/* Grid pattern */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
-        </motion.div>
+      {/* ── Hero */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Animated gradient mesh */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-[#0a0a0a]" />
+          <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 8, repeat: Infinity }}
+            className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-sky-600/20 rounded-full blur-[100px]" />
+          <motion.div animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 10, repeat: Infinity }}
+            className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-blue-600/20 rounded-full blur-[120px]" />
+          {/* Dot grid */}
+          <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle, #ffffff08 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+        </div>
 
-        <motion.div style={{ opacity: heroOpacity }} className="relative z-10 max-w-6xl mx-auto px-6 pt-28 pb-24 w-full">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}>
-            <span className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 text-sky-600 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full mb-8">
-              <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse" />
-              Web Design · AI · Digital Marketing · NZ
-            </span>
-          </motion.div>
+        <motion.div style={{ y: heroY }} className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-24 w-full grid md:grid-cols-2 gap-16 items-center">
+          <div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 border border-sky-500/30 bg-sky-500/10 text-sky-400 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full mb-8">
+              <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1.5 h-1.5 bg-sky-400 rounded-full" />
+              Available for projects · Wellington, NZ
+            </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="text-6xl md:text-8xl font-bold tracking-tight leading-[0.95] mb-8"
-          >
-            Building digital<br />
-            <span className="text-sky-500">systems</span> that<br />
-            actually work.
-          </motion.h1>
+            <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="text-6xl md:text-7xl font-bold tracking-tight leading-[0.92] mb-6">
+              I build digital<br />
+              systems that<br />
+              <Typewriter />
+            </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.7 }}
-            className="text-xl text-gray-500 max-w-xl leading-relaxed mb-10"
-          >
-            I'm Oliver — a New Zealand-based designer, developer, and AI builder helping businesses grow their digital presence.
-          </motion.p>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+              className="text-gray-400 text-lg leading-relaxed mb-10 max-w-md">
+              60+ clients across New Zealand. Web design, AI automation, and digital marketing that actually moves the needle.
+            </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65, duration: 0.6 }}
-            className="flex flex-wrap gap-4"
-          >
-            <motion.a
-              href="#contact"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="bg-gray-900 text-white px-7 py-3.5 rounded-full font-medium hover:bg-gray-800 transition-colors shadow-lg"
-            >
-              Start a project
-            </motion.a>
-            <motion.a
-              href="#work"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="border border-gray-200 text-gray-700 px-7 py-3.5 rounded-full font-medium hover:border-gray-400 transition-colors"
-            >
-              See my work ↓
-            </motion.a>
-          </motion.div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }}
+              className="flex flex-wrap gap-4">
+              <MagneticButton href="#work" className="bg-white text-gray-900 px-7 py-3.5 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                View my work
+              </MagneticButton>
+              <MagneticButton href="#contact" className="border border-white/20 text-white px-7 py-3.5 rounded-full font-medium hover:border-white/50 transition-colors">
+                Start a project →
+              </MagneticButton>
+            </motion.div>
 
-          {/* Floating stat cards */}
-          <div className="mt-20 flex flex-wrap gap-4">
-            {[
-              { label: "Clients delivered", value: 60, suffix: "+" },
-              { label: "Years experience", value: 8, suffix: "+" },
-              { label: "Industries", value: 15, suffix: "+" },
-            ].map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 + i * 0.1 }}
-                className="bg-white border border-gray-100 rounded-2xl px-6 py-4 shadow-sm"
-              >
-                <p className="text-3xl font-bold text-gray-900">
-                  <CountUp target={s.value} suffix={s.suffix} />
-                </p>
-                <p className="text-sm text-gray-500 mt-0.5">{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="w-6 h-10 border-2 border-gray-300 rounded-full flex items-start justify-center pt-2"
-          >
-            <div className="w-1 h-2 bg-gray-400 rounded-full" />
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Services */}
-      <section id="services" className="py-32 px-6 max-w-6xl mx-auto">
-        <AnimatedSection>
-          <AnimatedItem>
-            <p className="text-sky-500 text-sm font-semibold tracking-widest uppercase mb-3">What I do</p>
-            <h2 className="text-5xl font-bold tracking-tight mb-16">Services</h2>
-          </AnimatedItem>
-          <div className="grid md:grid-cols-3 gap-6">
-            {services.map((s) => (
-              <AnimatedItem key={s.title}>
-                <motion.div
-                  whileHover={{ y: -6, scale: 1.01 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="rounded-3xl overflow-hidden group cursor-default border border-gray-100 shadow-sm hover:shadow-xl transition-shadow"
-                >
-                  <div className="relative h-48 overflow-hidden">
-                    <img src={s.image} alt={s.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50" />
-                    <span className="absolute top-4 left-4 text-2xl text-white">{s.icon}</span>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{s.description}</p>
-                  </div>
-                </motion.div>
-              </AnimatedItem>
-            ))}
-          </div>
-        </AnimatedSection>
-      </section>
-
-      {/* Projects */}
-      <section id="work" className="py-32 px-6 bg-gray-950">
-        <div className="max-w-6xl mx-auto">
-          <AnimatedSection>
-            <AnimatedItem>
-              <p className="text-sky-400 text-sm font-semibold tracking-widest uppercase mb-3">Selected work</p>
-              <h2 className="text-5xl font-bold tracking-tight text-white mb-16">Projects</h2>
-            </AnimatedItem>
-            <div className="grid md:grid-cols-2 gap-6">
-              {projects.map((p, i) => (
-                <AnimatedItem key={p.title}>
-                  <motion.div
-                    whileHover={{ y: -4 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                    className={`rounded-3xl overflow-hidden group cursor-default ${i === 0 ? "md:col-span-2" : ""}`}
-                  >
-                    <div className={`relative overflow-hidden ${i === 0 ? "h-72" : "h-48"}`}>
-                      <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {p.tags.map((tag) => (
-                            <span key={tag} className={`text-xs px-3 py-1 rounded-full font-medium ${accentMap[p.accent]}`}>{tag}</span>
-                          ))}
-                        </div>
-                        <h3 className="text-xl font-semibold text-white mb-1">{p.title}</h3>
-                        <p className="text-gray-300 text-sm leading-relaxed">{p.description}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                </AnimatedItem>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+              className="flex gap-10 mt-14">
+              {[{ v: 60, s: "+", l: "Clients" }, { v: 8, s: "+", l: "Years" }, { v: 15, s: "+", l: "Industries" }].map(s => (
+                <div key={s.l}>
+                  <p className="text-3xl font-bold"><Counter value={s.v} suffix={s.s} /></p>
+                  <p className="text-gray-500 text-sm mt-0.5">{s.l}</p>
+                </div>
               ))}
+            </motion.div>
+          </div>
+
+          {/* Right: AI Demo */}
+          <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className="hidden md:flex justify-end">
+            <div className="relative">
+              <div className="absolute -inset-4 bg-sky-500/10 rounded-[2rem] blur-xl" />
+              <AIDemo />
+              <div className="absolute -bottom-4 -right-4 bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+                ✦ AI-powered services
+              </div>
             </div>
-          </AnimatedSection>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ── Client Ticker */}
+      <Marquee />
+
+      {/* ── Services Bento */}
+      <section id="services" className="py-32 px-6 max-w-7xl mx-auto">
+        <FadeUp><p className="text-sky-400 text-xs font-semibold tracking-widest uppercase mb-3">What I do</p></FadeUp>
+        <FadeUp delay={0.1}><h2 className="text-5xl md:text-6xl font-bold tracking-tight mb-16">Services</h2></FadeUp>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[180px]">
+          {/* Large AI card */}
+          <FadeUp delay={0.15} className="col-span-2 row-span-2">
+            <TiltCard className="h-full">
+              <div className="relative h-full bg-gradient-to-br from-sky-500 to-blue-600 rounded-3xl p-8 overflow-hidden flex flex-col justify-between group">
+                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 70% 70%, #fff 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+                <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  className="absolute -right-8 -top-8 w-40 h-40 border border-white/20 rounded-full" />
+                <motion.div animate={{ rotate: [360, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                  className="absolute -right-4 -top-4 w-24 h-24 border border-white/30 rounded-full" />
+                <span className="text-4xl">✦</span>
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">AI Workflow Automation</h3>
+                  <p className="text-white/80 text-sm leading-relaxed">Custom AI systems that automate the complex. Real leverage, measurable ROI.</p>
+                </div>
+              </div>
+            </TiltCard>
+          </FadeUp>
+          {/* Web Design */}
+          <FadeUp delay={0.2} className="col-span-2">
+            <TiltCard className="h-full">
+              <div className="h-full bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 rounded-3xl p-6 flex items-center gap-6 overflow-hidden group relative">
+                <div className="absolute right-0 top-0 bottom-0 w-1/3 overflow-hidden opacity-20">
+                  <div className="text-[8px] font-mono text-sky-400 leading-tight p-3">
+                    {`const site = await build({\n  framework: 'nextjs',\n  style: 'tailwind',\n  perf: 100\n})`}
+                  </div>
+                </div>
+                <span className="text-3xl">◻</span>
+                <div>
+                  <h3 className="text-lg font-bold mb-1">Web Design & Dev</h3>
+                  <p className="text-gray-400 text-sm">Next.js · React · Tailwind. Fast, beautiful, conversion-focused.</p>
+                </div>
+              </div>
+            </TiltCard>
+          </FadeUp>
+          {/* Marketing */}
+          <FadeUp delay={0.25}>
+            <TiltCard className="h-full">
+              <div className="h-full bg-gradient-to-br from-violet-900 to-purple-900 border border-violet-500/20 rounded-3xl p-6 flex flex-col justify-between group">
+                <span className="text-2xl">↗</span>
+                <div>
+                  <h3 className="font-bold mb-1">Digital Marketing</h3>
+                  <p className="text-gray-400 text-xs">SEO · Content · Growth systems</p>
+                </div>
+              </div>
+            </TiltCard>
+          </FadeUp>
+          {/* Brand */}
+          <FadeUp delay={0.3}>
+            <TiltCard className="h-full">
+              <div className="h-full bg-gradient-to-br from-emerald-900 to-teal-900 border border-emerald-500/20 rounded-3xl p-6 flex flex-col justify-between">
+                <span className="text-2xl">◈</span>
+                <div>
+                  <h3 className="font-bold mb-1">Brand & Strategy</h3>
+                  <p className="text-gray-400 text-xs">Identity · Positioning · Messaging</p>
+                </div>
+              </div>
+            </TiltCard>
+          </FadeUp>
         </div>
       </section>
 
-      {/* Clients */}
-      <section id="clients" className="py-32 px-6 max-w-6xl mx-auto">
-        <AnimatedSection>
-          <AnimatedItem>
-            <p className="text-sky-500 text-sm font-semibold tracking-widest uppercase mb-3">Who I've worked with</p>
-            <h2 className="text-5xl font-bold tracking-tight mb-4">60+ clients across<br />New Zealand</h2>
-            <p className="text-gray-500 mb-16 max-w-xl">From national sporting bodies to startups, I've helped businesses across every industry build better digital presences.</p>
-          </AnimatedItem>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {clients.map((c, i) => (
-              <AnimatedItem key={c.name}>
-                <motion.div
-                  whileHover={{ y: -4, scale: 1.04 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                  className="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-gray-50 hover:shadow-md transition-all group cursor-default border border-transparent hover:border-gray-100"
-                >
-                  <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={`https://logo.clearbit.com/${c.domain}`}
-                      alt={c.name}
-                      className="w-10 h-10 object-contain"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                        e.target.parentNode.innerHTML = `<span class='text-sm font-bold text-gray-400'>${c.name.charAt(0)}</span>`;
-                      }}
-                    />
+      {/* ── Projects */}
+      <section id="work" className="py-32 px-6 max-w-7xl mx-auto">
+        <FadeUp><p className="text-sky-400 text-xs font-semibold tracking-widest uppercase mb-3">Selected work</p></FadeUp>
+        <FadeUp delay={0.1}><h2 className="text-5xl md:text-6xl font-bold tracking-tight mb-16">Projects</h2></FadeUp>
+        <div className="space-y-6">
+          {projects.map((p, i) => (
+            <FadeUp key={p.title} delay={i * 0.08}>
+              <TiltCard className="w-full">
+                <div className={`relative overflow-hidden rounded-3xl group cursor-default ${p.span === "full" ? "h-[480px]" : "h-64"}`}>
+                  <img src={p.img} alt={p.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                  <div className="absolute inset-0 bg-sky-900/0 group-hover:bg-sky-900/10 transition-colors duration-500" />
+                  <div className="absolute bottom-0 left-0 right-0 p-8">
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {p.tags.map(t => <span key={t} className="text-xs bg-white/10 backdrop-blur-sm text-white px-3 py-1 rounded-full border border-white/10">{t}</span>)}
+                    </div>
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <p className="text-gray-400 text-sm mb-1">{p.sub}</p>
+                        <h3 className={`font-bold text-white ${p.span === "full" ? "text-4xl" : "text-2xl"}`}>{p.title}</h3>
+                        {p.span === "full" && <p className="text-gray-300 mt-2 max-w-xl text-sm leading-relaxed">{p.desc}</p>}
+                      </div>
+                      <motion.div whileHover={{ x: 4 }} className="text-white/50 text-2xl group-hover:text-white transition-colors">→</motion.div>
+                    </div>
                   </div>
-                  <span className="text-xs text-gray-500 text-center leading-tight font-medium">{c.name}</span>
-                </motion.div>
-              </AnimatedItem>
-            ))}
-          </div>
-        </AnimatedSection>
+                </div>
+              </TiltCard>
+            </FadeUp>
+          ))}
+        </div>
       </section>
 
-      {/* CTA Banner */}
-      <section className="py-16 px-6">
-        <AnimatedSection>
-          <AnimatedItem>
-            <div className="max-w-6xl mx-auto relative overflow-hidden rounded-3xl bg-sky-500 p-16 text-center">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/4" />
-              <div className="relative z-10">
-                <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Let's build something great.</h2>
-                <p className="text-sky-100 mb-8 text-lg max-w-xl mx-auto">Whether it's a website, an AI system, or a full digital strategy — I'd love to hear about your project.</p>
-                <motion.a
-                  href="mailto:oliverjbunce@gmail.com"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-block bg-white text-sky-500 px-8 py-4 rounded-full font-semibold text-lg hover:bg-sky-50 transition-colors shadow-lg"
-                >
+      {/* ── Clients Grid */}
+      <section id="clients" className="py-32 px-6 bg-gray-950/50">
+        <div className="max-w-7xl mx-auto">
+          <FadeUp><p className="text-sky-400 text-xs font-semibold tracking-widest uppercase mb-3">Who I've worked with</p></FadeUp>
+          <FadeUp delay={0.1}><h2 className="text-5xl md:text-6xl font-bold tracking-tight mb-4">60+ clients across NZ</h2></FadeUp>
+          <FadeUp delay={0.2}><p className="text-gray-500 mb-16 max-w-xl">From national sporting bodies and government-linked organisations to startups and local businesses.</p></FadeUp>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
+            {clients.map((c, i) => {
+              const domains = { "Basketball New Zealand": "basketballnz.co.nz", "Independent Doors": "independentdoors.co.nz", "Round the Bays": "roundthebays.co.nz", "Manor Build": "manorbuild.co.nz", "BPM": "bpm.co.nz", "Global Dairy Trade": "globaldairytrade.info", "Shelving Depot": "shelvingdepot.co.nz", "Smith BioMed": "smithbiomed.com", "ASEAN NZ Business Council": "aseannz.org", "Permagroup": "permagroup.co.nz", "ICNZ": "icnz.org.nz", "Coping with Loss": "copingwithloss.co.nz", "FrostBoss": "frostboss.com", "Anglers Lodge": "anglerslodge.co.nz", "Europlan": "europlan.co.nz", "StuffEvents": "stuffevents.co.nz", "Advantage Business": "advantagebusiness.co.nz", "Summer of Tech": "summeroftech.co.nz", "Island Cow Cuddles": "islandcowcuddles.com", "Betacraft": "betacraft.co.nz", "Nectar": "nectar.nz" };
+              return (
+                <FadeUp key={c} delay={i * 0.03}>
+                  <motion.div whileHover={{ y: -4, scale: 1.06 }} transition={{ type: "spring", stiffness: 400 }}
+                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/15 transition-colors group cursor-default" data-hover>
+                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
+                      <img src={`https://logo.clearbit.com/${domains[c]}`} alt={c} className="w-8 h-8 object-contain"
+                        onError={e => { e.target.style.display = "none"; e.target.parentNode.innerHTML = `<span class='text-xs font-bold text-gray-400'>${c.charAt(0)}</span>`; }} />
+                    </div>
+                    <span className="text-[10px] text-gray-500 text-center leading-tight">{c}</span>
+                  </motion.div>
+                </FadeUp>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Contact */}
+      <section id="contact" className="py-32 px-6">
+        <div className="max-w-7xl mx-auto">
+          <FadeUp>
+            <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-sky-500 via-blue-500 to-blue-600 p-16 md:p-24">
+              <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle, #ffffff12 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
+              <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 6, repeat: Infinity }}
+                className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full" />
+              <div className="relative z-10 text-center">
+                <p className="text-white/70 text-sm font-semibold tracking-widest uppercase mb-4">Let's build something</p>
+                <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">Ready to grow?</h2>
+                <p className="text-white/80 text-xl max-w-xl mx-auto mb-10">Website, AI system, or full digital strategy — let's talk about what you need.</p>
+                <MagneticButton href="mailto:oliverjbunce@gmail.com"
+                  className="inline-block bg-white text-sky-600 font-bold text-xl px-10 py-5 rounded-full hover:bg-sky-50 transition-colors shadow-2xl">
                   oliverjbunce@gmail.com
-                </motion.a>
+                </MagneticButton>
+                <p className="text-white/50 text-sm mt-6">Wellington, New Zealand · Working globally</p>
               </div>
             </div>
-          </AnimatedItem>
-        </AnimatedSection>
+          </FadeUp>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex justify-between items-center text-sm text-gray-400">
-          <span>© {new Date().getFullYear()} Oliver Bunce · Wellington, NZ</span>
+      <footer className="border-t border-white/5 py-8 px-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm text-gray-600">
+          <span>© {new Date().getFullYear()} Oliver Bunce</span>
           <span>Built by Vela ✦</span>
         </div>
       </footer>
