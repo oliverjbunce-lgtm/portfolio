@@ -149,7 +149,99 @@ function Counter({ value, suffix = "" }) {
 
 // ─── Infinite Marquee ─────────────────────────────────────────────────────────
 const clientNames = ["Basketball New Zealand","Independent Doors","Round the Bays","Manor Build","BPM","Global Dairy Trade","Shelving Depot","Smith BioMed","ASEAN NZ Business Council","Permagroup","ICNZ","Coping with Loss","FrostBoss","Anglers Lodge","Europlan","StuffEvents","Advantage Business","Summer of Tech","Island Cow Cuddles","Betacraft","Nectar"];
-const clientDomains = { "Basketball New Zealand":"basketballnz.co.nz","Independent Doors":"independentdoors.co.nz","Round the Bays":"roundthebays.co.nz","Manor Build":"manorbuild.co.nz","BPM":"bpm.co.nz","Global Dairy Trade":"globaldairytrade.info","Shelving Depot":"shelvingdepot.co.nz","Smith BioMed":"smithbiomed.com","ASEAN NZ Business Council":"aseannz.org","Permagroup":"permagroup.co.nz","ICNZ":"icnz.org.nz","Coping with Loss":"copingwithloss.co.nz","FrostBoss":"frostboss.com","Anglers Lodge":"anglerslodge.co.nz","Europlan":"europlan.co.nz","StuffEvents":"stuffevents.co.nz","Advantage Business":"advantagebusiness.co.nz","Summer of Tech":"summeroftech.co.nz","Island Cow Cuddles":"islandcowcuddles.com","Betacraft":"betacraft.co.nz","Nectar":"nectar.nz" };
+
+// Direct logo URLs sourced from each client's website — more reliable than Clearbit for NZ businesses
+const clientLogos = {
+  "Round the Bays":       { url: "https://cdn.prod.website-files.com/668b175ce9412bf59c696f59/689e97ae7a7d4b8b1cabb2a2_Horizontal.svg" },
+  "Manor Build":          { url: "https://cdn.prod.website-files.com/690c0792ccabd9c0a853b5ad/691cec071bfbb392127eb94c_Logo.svg" },
+  "Global Dairy Trade":   { url: "https://cdn.globaldairytrade.info/ps/static-ss4/img/primary-logo.20f4cce6.svg" },
+  "Shelving Depot":       { url: "https://shelvingdepot.co.nz/wp-content/uploads/2021/11/shelving-depot-racking-shelving-solutions-logo-white.svg", white: true },
+  "Smith BioMed":         { url: "https://www.smithbiomed.com/wp-content/uploads/2015/11/SBM-logo-v2.png" },
+  "Permagroup":           { url: "https://cdn.prod.website-files.com/65d2685948fded0472043333/65d33457a9dc3d7e085f18a6_permagroup-logo.svg" },
+  "ICNZ":                 { url: "https://www.icnz.org.nz/wp-content/uploads/2022/12/ICNZ_Logo_Orange.png" },
+  "FrostBoss":            { url: "https://cdn.prod.website-files.com/6227d1cf78da29ada668d2ef/6509534e07af84ef459ebc91_Frost%20Boss%20Logo%20Navy%20Stacked.png" },
+  "StuffEvents":          { url: "https://images.squarespace-cdn.com/content/v1/5cd4abb511f78404abe0e33a/d0e2e9bd-5eea-4397-a64d-8dfbea76bced/STUFF+Logo_BLK.png" },
+  "Advantage Business":   { url: "https://www.advantagebusiness.co.nz/wp-content/uploads/2020/09/AB-Logo-Black-4.png" },
+  "Summer of Tech":       { url: "https://images.squarespace-cdn.com/content/v1/60cfd646701da4034512a1c5/1625639692760-IOVPJDH7CY7O3IFUEEFN/Summer-of-Tech_Logo_H.png?format=300w" },
+  "Island Cow Cuddles":   { url: "https://cdn.prod.website-files.com/6958eea141a6f98e26f2a36e/696328b1103fbdabca8f978a_logotypesmall.png" },
+  "Betacraft":            { url: "https://betacraftworkwear.com/cdn/shop/files/Betacraft_logo_white-800.png?v=1667443326&width=600", white: true },
+};
+
+// Deterministic gradient colours for letter-avatar fallbacks
+function avatarGradient(name) {
+  const palettes = [
+    ["#0ea5e9","#2563eb"], // sky→blue
+    ["#8b5cf6","#7c3aed"], // violet→purple
+    ["#10b981","#059669"], // emerald→green
+    ["#f97316","#ef4444"], // orange→red
+    ["#ec4899","#f43f5e"], // pink→rose
+    ["#f59e0b","#d97706"], // amber→yellow
+    ["#14b8a6","#0891b2"], // teal→cyan
+    ["#6366f1","#4f46e5"], // indigo→blue
+  ];
+  const idx = (name.charCodeAt(0) + name.length) % palettes.length;
+  return palettes[idx];
+}
+
+// Logo card for the clients grid — grayscale default, full colour on hover
+function ClientLogoCard({ name }) {
+  const [failed, setFailed] = useState(false);
+  const entry = clientLogos[name];
+
+  if (!entry || failed) {
+    const [c1, c2] = avatarGradient(name);
+    return (
+      <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+        style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
+        <span className="text-xs font-bold text-white">{name.charAt(0)}</span>
+      </div>
+    );
+  }
+
+  const baseFilter = entry.white
+    ? "brightness(0) invert(1) grayscale(1) opacity(0.5)"
+    : "grayscale(1) opacity(0.65)";
+
+  return (
+    <div className={`w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden ${entry.white ? "bg-gray-800" : "bg-gray-100"}`}>
+      <img
+        src={entry.url}
+        alt={name}
+        className="w-7 h-7 object-contain transition-all duration-300"
+        style={{ filter: baseFilter }}
+        onMouseEnter={e => { e.currentTarget.style.filter = "none"; }}
+        onMouseLeave={e => { e.currentTarget.style.filter = baseFilter; }}
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
+function ClientLogo({ name, size = "md" }) {
+  const [failed, setFailed] = useState(false);
+  const entry = clientLogos[name];
+  const dims = size === "sm" ? { img: "w-4 h-4", box: "w-5 h-5", text: "text-[9px]" }
+                             : { img: "w-7 h-7", box: "w-10 h-10", text: "text-xs" };
+
+  if (!entry || failed) {
+    const [c1, c2] = avatarGradient(name);
+    return (
+      <div className={`${dims.box} rounded-lg flex items-center justify-center flex-shrink-0`}
+        style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
+        <span className={`font-bold text-white ${dims.text}`}>{name.charAt(0)}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${dims.box} rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 ${entry.white ? "bg-gray-800" : "bg-gray-100"}`}>
+      <img src={entry.url} alt={name}
+        className={`${dims.img} object-contain`}
+        style={entry.white ? {} : { filter: "grayscale(1) opacity(0.65)" }}
+        onError={() => setFailed(true)} />
+    </div>
+  );
+}
 
 function Marquee() {
   const doubled = [...clientNames, ...clientNames];
@@ -158,9 +250,7 @@ function Marquee() {
       <div className="flex animate-marquee whitespace-nowrap">
         {doubled.map((c, i) => (
           <span key={i} className="inline-flex items-center gap-3 mx-6 text-gray-400 text-sm">
-            <img src={`https://logo.clearbit.com/${clientDomains[c]}`} alt={c}
-              className="w-5 h-5 object-contain opacity-60"
-              onError={e => e.target.style.display = "none"} />
+            <ClientLogo name={c} size="sm" />
             {c}
           </span>
         ))}
@@ -371,11 +461,8 @@ export default function Home() {
           {clientNames.map((c, i) => (
             <FadeUp key={c} delay={i * 0.02}>
               <motion.div whileHover={{ y: -3, scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}
-                className="flex flex-col items-center gap-2 p-2.5 sm:p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all cursor-default" data-hover>
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                  <img src={`https://logo.clearbit.com/${clientDomains[c]}`} alt={c} className="w-7 h-7 object-contain"
-                    onError={e => { e.target.style.display = "none"; e.target.parentNode.innerHTML = `<span class='text-xs font-bold text-gray-400'>${c.charAt(0)}</span>`; }} />
-                </div>
+                className="group flex flex-col items-center gap-2 p-2.5 sm:p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all cursor-default" data-hover>
+                <ClientLogoCard name={c} />
                 <span className="text-[9px] sm:text-[10px] text-gray-400 text-center leading-tight">{c}</span>
               </motion.div>
             </FadeUp>
