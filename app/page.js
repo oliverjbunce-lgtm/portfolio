@@ -165,11 +165,11 @@ const clientLogos = {
   "Summer of Tech":       { url: "https://images.squarespace-cdn.com/content/v1/60cfd646701da4034512a1c5/1625639692760-IOVPJDH7CY7O3IFUEEFN/Summer-of-Tech_Logo_H.png?format=300w" },
   "Island Cow Cuddles":   { url: "https://cdn.prod.website-files.com/6958eea141a6f98e26f2a36e/696328b1103fbdabca8f978a_logotypesmall.png" },
   "Betacraft":            { url: "https://betacraftworkwear.com/cdn/shop/files/Betacraft_logo_white-800.png?v=1667443326&width=600", white: true },
-  "Basketball New Zealand": { url: "https://upload.wikimedia.org/wikipedia/commons/1/15/Basketball_New_Zealand_logo.png" },
+  "Basketball New Zealand": { url: "https://www.basketball.org.nz/wp-content/uploads/logo.svg" },
   "Independent Doors":      { url: "https://iddoors.co.nz/wp-content/uploads/2023/11/logo.svg" },
-  "BPM":                    { url: "https://bpm.co.nz/wp-content/uploads/2021/09/BPM-Logo.png" },
-  "Nectar":                 { url: "https://nectarshop.co.nz/cdn/shop/files/NectarLogo_Black.png" },
-  "Anglers Lodge":          { url: "https://anglerslodge.co.nz/wp-content/uploads/2021/06/AL-logo-web.png" },
+  "BPM":                    { url: "https://images.squarespace-cdn.com/content/v1/6150f24166823d0e2dfd48fe/43816fae-80b4-4821-b61c-32b75abf53fc/bpm_logo+pos.png?format=300w" },
+  "Nectar":                 { url: "https://nectar.co.nz/wp-content/themes/nectar-wp/public/img/nectar_money_2024/24_Nectar_Logo_Money_v1_White.png", white: true },
+  "Anglers Lodge":          { url: "https://cdn.prod.website-files.com/650d073b70af691cf4e21590/65441c5a68b4d18bf8c3c945_Anglers_Primary%20Coromandel%20Reverse.svg", white: true },
 };
 
 // Deterministic gradient colours for letter-avatar fallbacks
