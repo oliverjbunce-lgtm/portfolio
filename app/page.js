@@ -165,6 +165,11 @@ const clientLogos = {
   "Summer of Tech":       { url: "https://images.squarespace-cdn.com/content/v1/60cfd646701da4034512a1c5/1625639692760-IOVPJDH7CY7O3IFUEEFN/Summer-of-Tech_Logo_H.png?format=300w" },
   "Island Cow Cuddles":   { url: "https://cdn.prod.website-files.com/6958eea141a6f98e26f2a36e/696328b1103fbdabca8f978a_logotypesmall.png" },
   "Betacraft":            { url: "https://betacraftworkwear.com/cdn/shop/files/Betacraft_logo_white-800.png?v=1667443326&width=600", white: true },
+  "Basketball New Zealand": { url: "https://upload.wikimedia.org/wikipedia/commons/1/15/Basketball_New_Zealand_logo.png" },
+  "Independent Doors":      { url: "https://iddoors.co.nz/wp-content/uploads/2023/11/logo.svg" },
+  "BPM":                    { url: "https://bpm.co.nz/wp-content/uploads/2021/09/BPM-Logo.png" },
+  "Nectar":                 { url: "https://nectarshop.co.nz/cdn/shop/files/NectarLogo_Black.png" },
+  "Anglers Lodge":          { url: "https://anglerslodge.co.nz/wp-content/uploads/2021/06/AL-logo-web.png" },
 };
 
 // Deterministic gradient colours for letter-avatar fallbacks
@@ -183,37 +188,85 @@ function avatarGradient(name) {
   return palettes[idx];
 }
 
-// Logo card for the clients grid — grayscale default, full colour on hover
-function ClientLogoCard({ name }) {
+// Circular orb card for the clients grid
+function ClientOrb({ name, index }) {
+  const [hovered, setHovered] = useState(false);
   const [failed, setFailed] = useState(false);
   const entry = clientLogos[name];
+  const [c1, c2] = avatarGradient(name);
 
-  if (!entry || failed) {
-    const [c1, c2] = avatarGradient(name);
-    return (
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center"
-        style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
-        <span className="text-xs font-bold text-white">{name.charAt(0)}</span>
-      </div>
-    );
-  }
-
-  const baseFilter = entry.white
-    ? "brightness(0) invert(1) grayscale(1) opacity(0.5)"
-    : "grayscale(1) opacity(0.65)";
+  const SIZE = 76;
+  const STROKE = 3;
+  const RADIUS = (SIZE - STROKE * 2) / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
   return (
-    <div className={`w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden ${entry.white ? "bg-gray-800" : "bg-gray-100"}`}>
-      <img
-        src={entry.url}
-        alt={name}
-        className="w-7 h-7 object-contain transition-all duration-300"
-        style={{ filter: baseFilter }}
-        onMouseEnter={e => { e.currentTarget.style.filter = "none"; }}
-        onMouseLeave={e => { e.currentTarget.style.filter = baseFilter; }}
-        onError={() => setFailed(true)}
-      />
-    </div>
+    <FadeUp delay={index * 0.025}>
+      <motion.div
+        className="flex flex-col items-center gap-2.5 cursor-default select-none"
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
+        data-hover
+      >
+        <div className="relative" style={{ width: SIZE, height: SIZE }}>
+          <svg
+            width={SIZE} height={SIZE}
+            className="absolute inset-0 pointer-events-none"
+            style={{ transform: 'rotate(-90deg)' }}
+          >
+            <circle cx={SIZE/2} cy={SIZE/2} r={RADIUS} fill="none" stroke={`${c1}25`} strokeWidth={STROKE} />
+            <motion.circle
+              cx={SIZE/2} cy={SIZE/2} r={RADIUS}
+              fill="none"
+              stroke={c1}
+              strokeWidth={STROKE}
+              strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE}
+              animate={hovered
+                ? { strokeDashoffset: CIRCUMFERENCE * 0.22, opacity: 1 }
+                : { strokeDashoffset: CIRCUMFERENCE, opacity: 0 }
+              }
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </svg>
+          <motion.div
+            animate={hovered ? { scale: 1.06 } : { scale: 1 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+            className="absolute rounded-full overflow-hidden flex items-center justify-center"
+            style={{
+              inset: STROKE + 1,
+              background: (!entry || failed) ? `linear-gradient(135deg, ${c1}, ${c2})` : 'white',
+              boxShadow: hovered ? `0 8px 28px ${c1}45, 0 2px 8px rgba(0,0,0,0.08)` : '0 2px 8px rgba(0,0,0,0.07)',
+              transition: 'box-shadow 0.3s ease',
+            }}
+          >
+            {entry && !failed ? (
+              <img
+                src={entry.url}
+                alt={name}
+                className="object-contain transition-all duration-300"
+                style={{
+                  width: '62%',
+                  height: '62%',
+                  filter: hovered ? 'none' : (entry.white ? 'brightness(0) invert(1) grayscale(1) opacity(0.45)' : 'grayscale(1) opacity(0.5)'),
+                }}
+                onError={() => setFailed(true)}
+              />
+            ) : (
+              <span className="text-xl font-bold text-white">{name.charAt(0)}</span>
+            )}
+          </motion.div>
+        </div>
+        <motion.span
+          animate={{ color: hovered ? '#0ea5e9' : '#9ca3af' }}
+          transition={{ duration: 0.2 }}
+          className="text-[10px] sm:text-[11px] font-medium text-center leading-tight"
+          style={{ maxWidth: SIZE }}
+        >
+          {name}
+        </motion.span>
+      </motion.div>
+    </FadeUp>
   );
 }
 
@@ -315,11 +368,11 @@ const services = [
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 const projects = [
-  { title: "Door AI", sub: "Independent Doors", desc: "AI that reads building floor plans and generates door quotes automatically. YOLOv8 model trained on 1,400+ architectural drawings — replaced a 2-day manual process with 30 seconds.", tags: ["AI", "Computer Vision"], img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80", hero: true },
-  { title: "Basketball New Zealand", sub: "National Body · Tall Blacks", desc: "Digital presence for NZ basketball.", tags: ["Web Design", "Sports"], img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80" },
-  { title: "Global Dairy Trade", sub: "Enterprise", desc: "World's leading dairy commodity platform.", tags: ["Enterprise", "Web"], img: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800&q=80" },
-  { title: "Round the Bays", sub: "NZ Events", desc: "NZ's most iconic fun run event.", tags: ["Events", "Marketing"], img: "https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?w=800&q=80" },
-  { title: "Summer of Tech", sub: "Education · Tech", desc: "NZ's premier tech internship platform.", tags: ["Education", "Web"], img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80" },
+  { title: "Door AI", sub: "Independent Doors", desc: "AI that reads building floor plans and generates door quotes automatically. YOLOv8 model trained on 1,400+ architectural drawings — replaced a 2-day manual process with 30 seconds.", tags: ["AI", "Computer Vision"], img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80", hero: true, slug: "door-ai" },
+  { title: "Basketball New Zealand", sub: "National Body · Tall Blacks", desc: "Digital presence for NZ basketball.", tags: ["Web Design", "Sports"], img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80", slug: "basketball-nz" },
+  { title: "Global Dairy Trade", sub: "Enterprise", desc: "World's leading dairy commodity platform.", tags: ["Enterprise", "Web"], img: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800&q=80", slug: "global-dairy-trade" },
+  { title: "Round the Bays", sub: "NZ Events", desc: "NZ's most iconic fun run event.", tags: ["Events", "Marketing"], img: "https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?w=800&q=80", slug: "round-the-bays" },
+  { title: "Summer of Tech", sub: "Education · Tech", desc: "NZ's premier tech internship platform.", tags: ["Education", "Web"], img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80", slug: "summer-of-tech" },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -345,7 +398,7 @@ export default function Home() {
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                 className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 text-sky-600 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full mb-6">
                 <motion.span animate={{ opacity: [1,0,1] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1.5 h-1.5 bg-sky-500 rounded-full" />
-                Available for projects · Wellington, NZ
+                Available for projects · NZ & worldwide
               </motion.div>
 
               <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7, ease: [0.22,1,0.36,1] }}
@@ -432,19 +485,21 @@ export default function Home() {
             {projects.map((p, i) => (
               <FadeUp key={p.title} delay={i * 0.07}>
                 <TiltCard className="w-full">
-                  <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}
-                    className={`relative overflow-hidden rounded-2xl group ${p.hero ? "h-64 sm:h-80 md:h-96" : "h-48 sm:h-56"}`}>
-                    <img src={p.img} alt={p.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {p.tags.map(t => <span key={t} className="text-xs bg-white/15 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full border border-white/10">{t}</span>)}
+                  <a href={`/projects/${p.slug}`} className="block">
+                    <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}
+                      className={`relative overflow-hidden rounded-2xl group cursor-pointer ${p.hero ? "h-64 sm:h-80 md:h-96" : "h-48 sm:h-56"}`}>
+                      <img src={p.img} alt={p.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {p.tags.map(t => <span key={t} className="text-xs bg-white/15 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full border border-white/10">{t}</span>)}
+                        </div>
+                        <p className="text-gray-300 text-xs mb-0.5">{p.sub}</p>
+                        <h3 className={`font-bold text-white ${p.hero ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl"}`}>{p.title}</h3>
+                        {p.hero && <p className="text-gray-300 text-sm mt-1.5 leading-relaxed max-w-xl hidden sm:block">{p.desc}</p>}
                       </div>
-                      <p className="text-gray-300 text-xs mb-0.5">{p.sub}</p>
-                      <h3 className={`font-bold text-white ${p.hero ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl"}`}>{p.title}</h3>
-                      {p.hero && <p className="text-gray-300 text-sm mt-1.5 leading-relaxed max-w-xl hidden sm:block">{p.desc}</p>}
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  </a>
                 </TiltCard>
               </FadeUp>
             ))}
@@ -455,17 +510,11 @@ export default function Home() {
       {/* ── Clients */}
       <section id="clients" className="py-20 md:py-32 px-5 max-w-6xl mx-auto">
         <FadeUp><p className="text-sky-500 text-xs font-bold tracking-widest uppercase mb-2">Who I've worked with</p></FadeUp>
-        <FadeUp delay={0.1}><h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">60+ clients<br className="sm:hidden" /> across NZ</h2></FadeUp>
-        <FadeUp delay={0.15}><p className="text-gray-400 text-sm sm:text-base mb-10 max-w-lg">From national sporting bodies and enterprise platforms to tourism, trades, and everything in between.</p></FadeUp>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3">
+        <FadeUp delay={0.1}><h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">60+ clients<br className="sm:hidden" /> across industries</h2></FadeUp>
+        <FadeUp delay={0.15}><p className="text-gray-400 text-sm sm:text-base mb-12 max-w-lg">From national sporting bodies and enterprise platforms to tourism, trades, and everything in between.</p></FadeUp>
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-x-3 gap-y-8 justify-items-center">
           {clientNames.map((c, i) => (
-            <FadeUp key={c} delay={i * 0.02}>
-              <motion.div whileHover={{ y: -3, scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}
-                className="group flex flex-col items-center gap-2 p-2.5 sm:p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all cursor-default" data-hover>
-                <ClientLogoCard name={c} />
-                <span className="text-[9px] sm:text-[10px] text-gray-400 text-center leading-tight">{c}</span>
-              </motion.div>
-            </FadeUp>
+            <ClientOrb key={c} name={c} index={i} />
           ))}
         </div>
       </section>
@@ -486,7 +535,7 @@ export default function Home() {
                   className="inline-block bg-white text-sky-600 font-bold text-base sm:text-lg px-8 sm:px-10 py-4 rounded-full hover:bg-sky-50 transition-colors shadow-xl">
                   oliverjbunce@gmail.com
                 </motion.a>
-                <p className="text-white/40 text-xs mt-5">Wellington, New Zealand · Working globally</p>
+                <p className="text-white/40 text-xs mt-5">New Zealand · Working worldwide</p>
               </div>
             </div>
           </FadeUp>
@@ -495,7 +544,7 @@ export default function Home() {
 
       <footer className="border-t border-gray-100 py-6 px-5">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-400">
-          <span>© {new Date().getFullYear()} Oliver Bunce · Wellington, NZ</span>
+          <span>© {new Date().getFullYear()} Oliver Bunce · New Zealand</span>
           <span>Built by Vela ✦</span>
         </div>
       </footer>
