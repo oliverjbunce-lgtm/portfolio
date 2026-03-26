@@ -235,7 +235,7 @@ function ClientOrb({ name, index }) {
             className="absolute rounded-full overflow-hidden flex items-center justify-center"
             style={{
               inset: STROKE + 1,
-              background: (!entry || failed) ? `linear-gradient(135deg, ${c1}, ${c2})` : 'white',
+              background: (!entry || failed) ? `linear-gradient(135deg, ${c1}, ${c2})` : (entry.white ? '#1a2235' : 'white'),
               boxShadow: hovered ? `0 8px 28px ${c1}45, 0 2px 8px rgba(0,0,0,0.08)` : '0 2px 8px rgba(0,0,0,0.07)',
               transition: 'box-shadow 0.3s ease',
             }}
@@ -248,7 +248,7 @@ function ClientOrb({ name, index }) {
                 style={{
                   width: '62%',
                   height: '62%',
-                  filter: hovered ? 'none' : (entry.white ? 'brightness(0) invert(1) grayscale(1) opacity(0.45)' : 'grayscale(1) opacity(0.5)'),
+                  filter: hovered ? 'none' : (entry.white ? 'opacity(0.55)' : 'grayscale(1) opacity(0.5)'),
                 }}
                 onError={() => setFailed(true)}
               />
