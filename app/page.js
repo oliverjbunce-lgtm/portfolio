@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, useSpring, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 // ─── Detect touch device ──────────────────────────────────────────────────────
 function useIsTouch() {
@@ -148,7 +149,7 @@ function Counter({ value, suffix = "" }) {
 }
 
 // ─── Infinite Marquee ─────────────────────────────────────────────────────────
-const clientNames = ["Basketball New Zealand","Independent Doors","Round the Bays","Manor Build","BPM","Global Dairy Trade","Shelving Depot","Smith BioMed","ASEAN NZ Business Council","Permagroup","ICNZ","Coping with Loss","FrostBoss","Anglers Lodge","Europlan","StuffEvents","Advantage Business","Summer of Tech","Island Cow Cuddles","Betacraft","Nectar"];
+const clientNames = ["Basketball New Zealand","Independent Doors","Round the Bays","Manor Build","BPM","Global Dairy Trade","Shelving Depot","Smith BioMed","ASEAN NZ Business Council","Permagroup","ICNZ","FrostBoss","Anglers Lodge","Europlan","StuffEvents","Advantage Business","Summer of Tech","Island Cow Cuddles","Betacraft","Nectar"];
 
 // Direct logo URLs sourced from each client's website — more reliable than Clearbit for NZ businesses
 const clientLogos = {
@@ -170,7 +171,134 @@ const clientLogos = {
   "BPM":                    { url: "https://images.squarespace-cdn.com/content/v1/6150f24166823d0e2dfd48fe/43816fae-80b4-4821-b61c-32b75abf53fc/bpm_logo+pos.png?format=300w" },
   "Nectar":                 { url: "https://nectar.co.nz/wp-content/themes/nectar-wp/public/img/nectar_money_2024/24_Nectar_Logo_Money_v1_White.png", white: true },
   "Anglers Lodge":          { url: "https://cdn.prod.website-files.com/650d073b70af691cf4e21590/65441c5a68b4d18bf8c3c945_Anglers_Primary%20Coromandel%20Reverse.svg", white: true },
+  "ASEAN NZ Business Council": { url: "https://asean.org.nz/sites/default/files/ASEAN_NZ_BC_Logo%20%C6%92_Landscape.png" },
 };
+
+// Client metadata for tap-to-reveal mobile cards
+const clientInfo = {
+  "Basketball New Zealand": {
+    industry: "Sports / National Body",
+    work: "Website redesign & digital strategy for NZ's national basketball organisation.",
+    img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=900&q=80",
+  },
+  "Independent Doors": {
+    industry: "Construction / Manufacturing",
+    work: "Website, digital marketing, and an AI system that reads floor plans and auto-classifies door types for quoting.",
+    img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=80",
+  },
+  "Round the Bays": {
+    industry: "Events",
+    work: "Digital presence and marketing for NZ's most iconic fun run event.",
+    img: "https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?w=900&q=80",
+  },
+  "Manor Build": {
+    industry: "Construction",
+    work: "Website design and development for a premium residential building company.",
+    img: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=900&q=80",
+  },
+  "BPM": {
+    industry: "Project Management",
+    work: "Website and digital presence for an independent construction project management consultancy.",
+    img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&q=80",
+  },
+  "Global Dairy Trade": {
+    industry: "Agriculture / Commodities",
+    work: "Digital marketing and web strategy for the world's leading dairy trading platform.",
+    img: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900&q=80",
+  },
+  "Shelving Depot": {
+    industry: "Retail / Storage",
+    work: "Website design and SEO for NZ's leading shelving and racking solutions provider.",
+    img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&q=80",
+  },
+  "Smith BioMed": {
+    industry: "Biomedical",
+    work: "Website and digital presence for a biomedical technology company.",
+    img: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=900&q=80",
+  },
+  "ASEAN NZ Business Council": {
+    industry: "Trade / Business Council",
+    work: "Website and digital strategy for the ASEAN New Zealand Business Council.",
+    img: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&q=80",
+  },
+  "Permagroup": {
+    industry: "Building Products",
+    work: "Website design and digital marketing for a NZ building products company.",
+    img: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=900&q=80",
+  },
+  "ICNZ": {
+    industry: "Insurance",
+    work: "Web presence and digital strategy for the Insurance Council of New Zealand.",
+    img: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=900&q=80",
+  },
+  "FrostBoss": {
+    industry: "AgriTech",
+    work: "Website and digital marketing for a frost protection technology company.",
+    img: "https://images.unsplash.com/photo-1516912481808-3406841bd33c?w=900&q=80",
+  },
+  "Anglers Lodge": {
+    industry: "Tourism / Hospitality",
+    work: "Website and brand presence for a premier fishing lodge in the Coromandel.",
+    img: "https://images.unsplash.com/photo-1500402448245-d49c5229c564?w=900&q=80",
+  },
+  "Europlan": {
+    industry: "Interior Design",
+    work: "Website and digital marketing for a premium kitchen and furniture design studio.",
+    img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&q=80",
+  },
+  "StuffEvents": {
+    industry: "Media / Events",
+    work: "Website and event marketing for Stuff's NZ events platform.",
+    img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&q=80",
+  },
+  "Advantage Business": {
+    industry: "Business Consulting",
+    work: "Website and digital presence for a NZ business consultancy.",
+    img: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&q=80",
+  },
+  "Summer of Tech": {
+    industry: "Tech / Education",
+    work: "Website and marketing strategy for NZ's premier tech internship programme.",
+    img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=900&q=80",
+  },
+  "Island Cow Cuddles": {
+    industry: "Tourism / Agriculture",
+    work: "Website and marketing for a unique cow-hugging tourism experience in Hawaii.",
+    img: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=900&q=80",
+  },
+  "Betacraft": {
+    industry: "Workwear / Retail",
+    work: "Digital marketing and web strategy for a leading NZ workwear brand.",
+    img: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=900&q=80",
+  },
+  "Nectar": {
+    industry: "Fintech",
+    work: "Website and marketing for a NZ financial services app.",
+    img: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=900&q=80",
+  },
+};
+
+// Arrange clients in concentric rings (Apple Watch style)
+function getBubblePositions(names) {
+  const rings = [
+    { count: 1,  radius: 0   },
+    { count: 6,  radius: 115 },
+    { count: 13, radius: 225 },
+  ];
+  const positions = [];
+  let idx = 0;
+  for (const ring of rings) {
+    for (let i = 0; i < ring.count && idx < names.length; i++, idx++) {
+      const angle = (2 * Math.PI * i) / ring.count - Math.PI / 2;
+      positions.push({
+        name: names[idx],
+        x: ring.radius * Math.cos(angle),
+        y: ring.radius * Math.sin(angle),
+      });
+    }
+  }
+  return positions;
+}
 
 // Deterministic gradient colours for letter-avatar fallbacks
 function avatarGradient(name) {
@@ -189,7 +317,7 @@ function avatarGradient(name) {
 }
 
 // Circular orb card for the clients grid
-function ClientOrb({ name, index }) {
+function ClientOrb({ name, index, onClick }) {
   const [hovered, setHovered] = useState(false);
   const [failed, setFailed] = useState(false);
   const entry = clientLogos[name];
@@ -202,10 +330,11 @@ function ClientOrb({ name, index }) {
 
   return (
     <FadeUp delay={index * 0.025}>
-      <motion.div
-        className="flex flex-col items-center gap-2.5 cursor-default select-none"
+      <motion.button
+        className="flex flex-col items-center gap-2.5 cursor-default select-none bg-transparent border-0 p-0"
         onHoverStart={() => setHovered(true)}
         onHoverEnd={() => setHovered(false)}
+        onClick={() => onClick && onClick(name)}
         data-hover
       >
         <div className="relative" style={{ width: SIZE, height: SIZE }}>
@@ -265,8 +394,157 @@ function ClientOrb({ name, index }) {
         >
           {name}
         </motion.span>
-      </motion.div>
+      </motion.button>
     </FadeUp>
+  );
+}
+
+// ─── Client Modal ─────────────────────────────────────────────────────────────
+function ClientModal({ client, onClose }) {
+  const entry = clientLogos[client];
+  const info = clientInfo[client];
+  if (!client || !info) return null;
+  return (
+    <AnimatePresence>
+      {client && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
+            initial={{ scale: 0.88, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.88, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <img src={info.img} alt={client} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.95) 100%)' }} />
+            <div className="relative z-10 flex flex-col items-center justify-end min-h-[420px] p-6 pb-8">
+              {entry && (
+                <img
+                  src={entry.url}
+                  alt={client}
+                  className="h-12 max-w-[150px] object-contain mb-5"
+                  style={{ filter: entry.white ? 'none' : 'brightness(0) invert(1)' }}
+                />
+              )}
+              <h3 className="text-2xl font-bold text-white text-center mb-2">{client}</h3>
+              <span className="text-xs px-3 py-1 rounded-full mb-4 text-white" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(4px)' }}>{info.industry}</span>
+              <p className="text-sm text-center leading-relaxed" style={{ color: 'rgba(255,255,255,0.8)' }}>{info.work}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-white text-lg"
+              style={{ background: 'rgba(0,0,0,0.45)' }}
+            >×</button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Bubble Map (Apple Watch style) ──────────────────────────────────────────
+function BubbleOrb({ name, x, y, ORB, onSelect }) {
+  const entry = clientLogos[name];
+  const [failed, setFailed] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const palettes = [["#0ea5e9","#2563eb"],["#8b5cf6","#7c3aed"],["#10b981","#059669"],["#f97316","#ef4444"],["#ec4899","#f43f5e"],["#f59e0b","#d97706"]];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  const [c1, c2] = palettes[hash % palettes.length];
+
+  return (
+    <motion.button
+      onClick={() => onSelect(name)}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      whileHover={{ scale: 1.12 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      style={{
+        position: 'absolute',
+        left: `calc(50% + ${x}px - ${ORB / 2}px)`,
+        top: `calc(50% + ${y}px - ${ORB / 2}px)`,
+        width: ORB,
+        height: ORB,
+        borderRadius: '50%',
+        border: 'none',
+        padding: 0,
+        cursor: 'pointer',
+        background: (!entry || failed) ? `linear-gradient(135deg, ${c1}, ${c2})` : (entry.white ? '#1a2235' : 'white'),
+        boxShadow: hovered
+          ? `0 8px 24px ${c1}55, 0 2px 8px rgba(0,0,0,0.12)`
+          : '0 2px 10px rgba(0,0,0,0.10)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'box-shadow 0.25s ease',
+      }}
+    >
+      {entry && !failed ? (
+        <img
+          src={entry.url}
+          alt={name}
+          onError={() => setFailed(true)}
+          style={{
+            width: '62%',
+            height: '62%',
+            objectFit: 'contain',
+            filter: entry.white ? 'opacity(0.9)' : 'grayscale(1) opacity(0.55)',
+            transition: 'filter 0.25s ease',
+          }}
+        />
+      ) : (
+        <span style={{ fontSize: 22, fontWeight: 700, color: 'white' }}>{name.charAt(0)}</span>
+      )}
+    </motion.button>
+  );
+}
+
+function BubbleMap({ onSelect }) {
+  const positions = getBubblePositions(clientNames);
+  const ORB = 68;
+
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-2xl"
+      style={{ height: '520px', background: '#f8f9fb', cursor: 'grab' }}
+    >
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <span className="text-xs text-gray-400 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+          Pinch or scroll to zoom · Drag to explore · Tap to learn more
+        </span>
+      </div>
+      <TransformWrapper
+        initialScale={1}
+        initialPositionX={0}
+        initialPositionY={0}
+        minScale={0.45}
+        maxScale={2.8}
+        centerOnInit={true}
+        wheel={{ step: 0.08 }}
+        pinch={{ step: 5 }}
+        doubleClick={{ disabled: false, mode: 'zoomIn' }}
+      >
+        <TransformComponent
+          wrapperStyle={{ width: '100%', height: '520px' }}
+          contentStyle={{ width: '620px', height: '520px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ position: 'relative', width: '620px', height: '520px' }}>
+            {positions.map(({ name, x, y }) => (
+              <BubbleOrb key={name} name={name} x={x} y={y} ORB={ORB} onSelect={onSelect} />
+            ))}
+          </div>
+        </TransformComponent>
+      </TransformWrapper>
+    </div>
   );
 }
 
@@ -377,6 +655,7 @@ const projects = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
+  const [activeClient, setActiveClient] = useState(null);
   return (
     <main className="bg-white text-gray-900 min-h-screen overflow-x-hidden" style={{ cursor: "none" }}>
       <CustomCursor />
@@ -512,11 +791,10 @@ export default function Home() {
         <FadeUp><p className="text-sky-500 text-xs font-bold tracking-widest uppercase mb-2">Who I've worked with</p></FadeUp>
         <FadeUp delay={0.1}><h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">60+ clients<br className="sm:hidden" /> across industries</h2></FadeUp>
         <FadeUp delay={0.15}><p className="text-gray-400 text-sm sm:text-base mb-12 max-w-lg">From national sporting bodies and enterprise platforms to tourism, trades, and everything in between.</p></FadeUp>
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-x-3 gap-y-8 justify-items-center">
-          {clientNames.map((c, i) => (
-            <ClientOrb key={c} name={c} index={i} />
-          ))}
-        </div>
+        <FadeUp delay={0.2}>
+          <BubbleMap onSelect={setActiveClient} />
+        </FadeUp>
+        <ClientModal client={activeClient} onClose={() => setActiveClient(null)} />
       </section>
 
       {/* ── Contact */}
