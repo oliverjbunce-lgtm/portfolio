@@ -461,13 +461,10 @@ function BubbleOrb({ name, x, y, ORB, onSelect }) {
   const [c1, c2] = palettes[hash % palettes.length];
 
   return (
-    <motion.button
+    <button
       onClick={() => onSelect(name)}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      whileHover={{ scale: 1.12 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         position: 'absolute',
         left: `calc(50% + ${x}px - ${ORB / 2}px)`,
@@ -485,7 +482,8 @@ function BubbleOrb({ name, x, y, ORB, onSelect }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'box-shadow 0.25s ease',
+        transform: hovered ? 'scale(1.1)' : 'scale(1)',
+        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
       }}
     >
       {entry && !failed ? (
@@ -504,7 +502,7 @@ function BubbleOrb({ name, x, y, ORB, onSelect }) {
       ) : (
         <span style={{ fontSize: 22, fontWeight: 700, color: 'white' }}>{name.charAt(0)}</span>
       )}
-    </motion.button>
+    </button>
   );
 }
 
@@ -523,19 +521,18 @@ function BubbleMap({ onSelect }) {
         </span>
       </div>
       <TransformWrapper
-        initialScale={1}
-        initialPositionX={0}
-        initialPositionY={0}
-        minScale={0.45}
-        maxScale={2.8}
-        centerOnInit={true}
-        wheel={{ step: 0.08 }}
+        initialScale={0.85}
+        minScale={0.35}
+        maxScale={3}
+        centerOnInit
+        wheel={{ step: 0.06 }}
         pinch={{ step: 5 }}
-        doubleClick={{ disabled: false, mode: 'zoomIn' }}
+        doubleClick={{ mode: 'zoomIn' }}
+        limitToBounds={false}
       >
         <TransformComponent
-          wrapperStyle={{ width: '100%', height: '520px' }}
-          contentStyle={{ width: '620px', height: '520px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          wrapperStyle={{ width: '100%', height: '520px', overflow: 'hidden' }}
+          contentStyle={{ width: '620px', height: '520px' }}
         >
           <div style={{ position: 'relative', width: '620px', height: '520px' }}>
             {positions.map(({ name, x, y }) => (
