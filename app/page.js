@@ -578,7 +578,7 @@ export default function Home() {
 
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}
                 className="text-gray-500 text-base sm:text-lg leading-relaxed mb-8 max-w-sm">
-                60+ NZ clients. Web design, AI automation, and digital marketing that drives real growth.
+                AI automation, custom AI systems, and web design for New Zealand businesses. 60+ clients. Real results.
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
