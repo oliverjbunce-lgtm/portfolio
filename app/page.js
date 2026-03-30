@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, useSpring, AnimatePresence } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 // ─── Detect touch device ──────────────────────────────────────────────────────
 function useIsTouch() {
@@ -278,28 +277,6 @@ const clientInfo = {
   },
 };
 
-// Arrange clients in concentric rings (Apple Watch style)
-function getBubblePositions(names) {
-  const rings = [
-    { count: 1,  radius: 0   },
-    { count: 6,  radius: 115 },
-    { count: 13, radius: 225 },
-  ];
-  const positions = [];
-  let idx = 0;
-  for (const ring of rings) {
-    for (let i = 0; i < ring.count && idx < names.length; i++, idx++) {
-      const angle = (2 * Math.PI * i) / ring.count - Math.PI / 2;
-      positions.push({
-        name: names[idx],
-        x: ring.radius * Math.cos(angle),
-        y: ring.radius * Math.sin(angle),
-      });
-    }
-  }
-  return positions;
-}
-
 // Deterministic gradient colours for letter-avatar fallbacks
 function avatarGradient(name) {
   const palettes = [
@@ -450,97 +427,13 @@ function ClientModal({ client, onClose }) {
   );
 }
 
-// ─── Bubble Map (Apple Watch style) ──────────────────────────────────────────
-function BubbleOrb({ name, x, y, ORB, onSelect }) {
-  const entry = clientLogos[name];
-  const [failed, setFailed] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const palettes = [["#0ea5e9","#2563eb"],["#8b5cf6","#7c3aed"],["#10b981","#059669"],["#f97316","#ef4444"],["#ec4899","#f43f5e"],["#f59e0b","#d97706"]];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  const [c1, c2] = palettes[hash % palettes.length];
-
+// ─── Client Grid ─────────────────────────────────────────────────────────────
+function ClientGrid({ onSelect }) {
   return (
-    <button
-      onClick={() => onSelect(name)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        position: 'absolute',
-        left: `calc(50% + ${x}px - ${ORB / 2}px)`,
-        top: `calc(50% + ${y}px - ${ORB / 2}px)`,
-        width: ORB,
-        height: ORB,
-        borderRadius: '50%',
-        border: 'none',
-        padding: 0,
-        cursor: 'pointer',
-        background: (!entry || failed) ? `linear-gradient(135deg, ${c1}, ${c2})` : (entry.white ? '#1a2235' : 'white'),
-        boxShadow: hovered
-          ? `0 8px 24px ${c1}55, 0 2px 8px rgba(0,0,0,0.12)`
-          : '0 2px 10px rgba(0,0,0,0.10)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transform: hovered ? 'scale(1.1)' : 'scale(1)',
-        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-      }}
-    >
-      {entry && !failed ? (
-        <img
-          src={entry.url}
-          alt={name}
-          onError={() => setFailed(true)}
-          style={{
-            width: '62%',
-            height: '62%',
-            objectFit: 'contain',
-            filter: entry.white ? 'opacity(0.9)' : 'grayscale(1) opacity(0.55)',
-            transition: 'filter 0.25s ease',
-          }}
-        />
-      ) : (
-        <span style={{ fontSize: 22, fontWeight: 700, color: 'white' }}>{name.charAt(0)}</span>
-      )}
-    </button>
-  );
-}
-
-function BubbleMap({ onSelect }) {
-  const positions = getBubblePositions(clientNames);
-  const ORB = 68;
-
-  return (
-    <div
-      className="relative w-full overflow-hidden rounded-2xl"
-      style={{ height: '520px', background: '#f8f9fb', cursor: 'grab' }}
-    >
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <span className="text-xs text-gray-400 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
-          Pinch or scroll to zoom · Drag to explore · Tap to learn more
-        </span>
-      </div>
-      <TransformWrapper
-        initialScale={0.85}
-        minScale={0.35}
-        maxScale={3}
-        centerOnInit
-        wheel={{ step: 0.06 }}
-        pinch={{ step: 5 }}
-        doubleClick={{ mode: 'zoomIn' }}
-        limitToBounds={false}
-      >
-        <TransformComponent
-          wrapperStyle={{ width: '100%', height: '520px', overflow: 'hidden' }}
-          contentStyle={{ width: '620px', height: '520px' }}
-        >
-          <div style={{ position: 'relative', width: '620px', height: '520px' }}>
-            {positions.map(({ name, x, y }) => (
-              <BubbleOrb key={name} name={name} x={x} y={y} ORB={ORB} onSelect={onSelect} />
-            ))}
-          </div>
-        </TransformComponent>
-      </TransformWrapper>
+    <div className="flex flex-wrap justify-center gap-x-6 gap-y-8 sm:gap-x-10 sm:gap-y-10">
+      {clientNames.map((name, i) => (
+        <ClientOrb key={name} name={name} index={i} onClick={onSelect} />
+      ))}
     </div>
   );
 }
@@ -789,7 +682,7 @@ export default function Home() {
         <FadeUp delay={0.1}><h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3">60+ clients<br className="sm:hidden" /> across industries</h2></FadeUp>
         <FadeUp delay={0.15}><p className="text-gray-400 text-sm sm:text-base mb-12 max-w-lg">From national sporting bodies and enterprise platforms to tourism, trades, and everything in between.</p></FadeUp>
         <FadeUp delay={0.2}>
-          <BubbleMap onSelect={setActiveClient} />
+          <ClientGrid onSelect={setActiveClient} />
         </FadeUp>
         <ClientModal client={activeClient} onClose={() => setActiveClient(null)} />
       </section>
