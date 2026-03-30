@@ -54,7 +54,7 @@ function Nav() {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-8 text-sm text-gray-500">
           {links.slice(0, 3).map(l => <a key={l} href={`#${l.toLowerCase()}`} className="hover:text-gray-900 transition-colors">{l}</a>)}
-          <a href="#contact" className="bg-sky-500 text-white px-5 py-2 rounded-full font-medium hover:bg-sky-600 transition-colors text-sm">Let's talk</a>
+          <a href="/start" className="bg-sky-500 text-white px-5 py-2 rounded-full font-medium hover:bg-sky-600 transition-colors text-sm">Let's talk</a>
         </div>
         {/* Mobile hamburger */}
         <button onClick={() => setOpen(!open)} className="md:hidden p-2 -mr-2 text-gray-600" aria-label="Menu">
