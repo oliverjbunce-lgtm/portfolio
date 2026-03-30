@@ -1,13 +1,13 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 // In-memory rate limit store: ip -> { count, resetAt }
 const rateLimitStore = new Map();
-const LIMIT = 5;          // max 5 conversations per IP
-const WINDOW_MS = 60 * 60 * 1000; // per hour
-const MAX_MESSAGES = 8;   // max messages per conversation
+const LIMIT = 5;
+const WINDOW_MS = 60 * 60 * 1000;
+const MAX_MESSAGES = 8;
 
 function checkRateLimit(ip) {
   const now = Date.now();
@@ -53,18 +53,19 @@ Only output the JSON when the user asks for a brief or you've gathered enough to
 
 export async function POST(req) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-
-  // Rate limit check (only on first message of a new conversation)
   const body = await req.json();
   const { messages, newConversation } = body;
 
   if (newConversation && !checkRateLimit(ip)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
-
   if (!messages || messages.length > MAX_MESSAGES) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
+
+  // Lazy-init OpenAI to avoid build-time errors
+  const { default: OpenAI } = await import("openai");
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
     const completion = await openai.chat.completions.create({
@@ -76,7 +77,6 @@ export async function POST(req) {
 
     const content = completion.choices[0].message.content;
 
-    // Check if it's a brief JSON response
     if (content.trim().startsWith('{"type":"brief"')) {
       try {
         const brief = JSON.parse(content.trim());
