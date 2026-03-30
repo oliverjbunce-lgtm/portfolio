@@ -160,6 +160,7 @@ const clientLogos = {
   "Permagroup":           { url: "https://cdn.prod.website-files.com/65d2685948fded0472043333/65d33457a9dc3d7e085f18a6_permagroup-logo.svg" },
   "ICNZ":                 { url: "https://www.icnz.org.nz/wp-content/uploads/2022/12/ICNZ_Logo_Orange.png" },
   "FrostBoss":            { url: "https://cdn.prod.website-files.com/6227d1cf78da29ada668d2ef/6509534e07af84ef459ebc91_Frost%20Boss%20Logo%20Navy%20Stacked.png" },
+  "Europlan":            { url: "https://europlan.nz/assets/themes/europlan-theme/images/logo.png" },
   "StuffEvents":          { url: "https://images.squarespace-cdn.com/content/v1/5cd4abb511f78404abe0e33a/d0e2e9bd-5eea-4397-a64d-8dfbea76bced/STUFF+Logo_BLK.png" },
   "Advantage Business":   { url: "https://www.advantagebusiness.co.nz/wp-content/uploads/2020/09/AB-Logo-Black-4.png" },
   "Summer of Tech":       { url: "https://images.squarespace-cdn.com/content/v1/60cfd646701da4034512a1c5/1625639692760-IOVPJDH7CY7O3IFUEEFN/Summer-of-Tech_Logo_H.png?format=300w" },
