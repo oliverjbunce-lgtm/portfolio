@@ -1,9 +1,18 @@
 import "./globals.css";
+import { Inter, Instrument_Serif } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+});
 
 const siteUrl = "https://oliverbunce.com";
-const title = "Oliver Bunce — AI Automation, Web Design & Digital Systems | New Zealand";
+const title = "Oliver Bunce — Web Designer, AI Builder & Digital Marketer | New Zealand";
 const description =
-  "Oliver Bunce builds custom AI systems, websites, and digital marketing tools for NZ businesses. Specialising in AI automation, computer vision, web design, and lead generation. 60+ clients across New Zealand.";
+  "Oliver Bunce builds websites, AI systems, and digital marketing strategies for businesses worldwide. 60+ clients. New Zealand based.";
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
@@ -50,7 +59,7 @@ export const metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Oliver Bunce — AI Automation & Web Design NZ",
+        alt: "Oliver Bunce — Web Designer & AI Builder, New Zealand",
       },
     ],
   },
@@ -64,17 +73,12 @@ export const metadata = {
   alternates: {
     canonical: siteUrl,
   },
-  other: {
-    "google-site-verification": "",
-  },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en-NZ">
+    <html lang="en-NZ" className={`${inter.variable} ${instrumentSerif.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -83,9 +87,9 @@ export default function RootLayout({ children }) {
               "@type": "Person",
               name: "Oliver Bunce",
               url: siteUrl,
-              jobTitle: "AI Automation Specialist & Web Designer",
+              jobTitle: "Web Designer, AI Builder & Digital Marketer",
               description:
-                "Oliver Bunce is a New Zealand-based AI systems builder, web designer, and digital marketer helping businesses automate workflows and grow online.",
+                "Oliver Bunce is a New Zealand-based web designer, AI systems builder, and digital marketer helping businesses grow online.",
               knowsAbout: [
                 "AI Automation",
                 "Machine Learning",
@@ -100,19 +104,26 @@ export default function RootLayout({ children }) {
                 addressCountry: "NZ",
                 addressRegion: "Wellington",
               },
-              sameAs: [
-                "https://github.com/oliverjbunce-lgtm",
-              ],
+              sameAs: ["https://github.com/oliverjbunce-lgtm"],
               offers: {
                 "@type": "Offer",
                 description:
-                  "Custom AI systems, web design, and digital marketing for New Zealand businesses.",
+                  "Custom AI systems, web design, and digital marketing for businesses worldwide.",
               },
             }),
           }}
         />
       </head>
-      <body className="bg-white text-gray-900 font-sans antialiased">{children}</body>
+      <body
+        className="antialiased"
+        style={{
+          fontFamily: "var(--font-inter), sans-serif",
+          backgroundColor: "#FAFAF7",
+          color: "#0A0A0A",
+        }}
+      >
+        {children}
+      </body>
     </html>
   );
 }
